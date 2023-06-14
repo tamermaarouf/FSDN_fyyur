@@ -1,7 +1,7 @@
 #----------------------------------------------------------------------------#
 # Imports
 #----------------------------------------------------------------------------#
-
+import os
 import json
 import dateutil.parser
 import babel
@@ -40,7 +40,6 @@ app.jinja_env.filters['datetime'] = format_datetime
 def index():
   return render_template('pages/home.html')
 
-
 #  Venues
 #  ----------------------------------------------------------------
 
@@ -48,6 +47,30 @@ def index():
 def venues():
   # TODO: replace with real venues data.
   #       num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
+  data = []
+  query_venues = Venue.query.order_by(Venue.state).all()
+  print(query_venues)
+  for qv in query_venues:
+    venue_dict = {
+      "city": qv.city,
+      "state": qv.state,
+      "venues": []
+    }
+    venuecol = {
+      "id": qv.id,
+      "name": qv.name
+    }
+    if len(data) > 0:
+      for item in data:
+        if qv.city in item.values():
+          item["venues"].append(venuecol)
+        else:
+          data.append(venue_dict)
+          item["venues"].append(venuecol)
+    else:
+      data.append(venue_dict)
+
+    '''
   data=[{
     "city": "San Francisco",
     "state": "CA",
@@ -68,8 +91,8 @@ def venues():
       "name": "The Dueling Pianos Bar",
       "num_upcoming_shows": 0,
     }]
-  }]
-  return render_template('pages/venues.html', areas=data);
+  }]'''
+  return render_template('pages/venues.html', areas=data)
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
@@ -471,12 +494,13 @@ if not app.debug:
 #----------------------------------------------------------------------------#
 
 # Default port:
+'''
 if __name__ == '__main__':
     app.run()
-
+'''
 # Or specify port manually:
-'''
+
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
+    app.debug = True
+    port = int(os.environ.get('PORT', 2023))
     app.run(host='0.0.0.0', port=port)
-'''

@@ -1,12 +1,14 @@
 from database_setup import app
-from database_setup import db, Venue, Artist, Genre, artist_genre
+from database_setup import db, Venue, Artist, Genre, Event 
 from flask_migrate import Migrate
 from flask import Flask
 
 with app.app_context():
+    # db.drop_all()
     venue1 = Venue(id=1, name='The Musical Hop', address='1015 Folsom Street', city= 'San Francisco', state= 'CA', phone= '123-123-1234',
                 image_link='https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60',
-                facebook_link= 'https://www.facebook.com/TheMusicalHop', website='https://www.themusicalhop.com')
+                facebook_link= 'https://www.facebook.com/TheMusicalHop', website='https://www.themusicalhop.com',
+                seeking_talent=True, seeking_description='We are on the lookout for a local artist to play every two weeks. Please call us.')
 
     venue2 = Venue(id=2, name='The Dueling Pianos Bar', address='335 Delancey Street', city= 'New York', state= 'NY', phone= '914-003-1132',
                 image_link='https://images.unsplash.com/photo-1497032205916-ac775f0649ae?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=750&q=80', 
@@ -18,7 +20,7 @@ with app.app_context():
     
     artist1 = Artist(id=4, name='Guns N Petals', city= 'San Francisco', state= 'CA', phone= '326-123-5000', 
                 image_link='https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80', 
-                facebook_link= 'https://www.facebook.com/mattquevedo923251523', website= 'https://www.gunsnpetalsband.com')
+                facebook_link= 'https://www.facebook.com/mattquevedo923251523', website= 'https://www.gunsnpetalsband.com', seeking_venue=True, seeking_description='Looking for shows to perform at in the San Francisco Bay Area!')
     
     artist2 = Artist(id=5, name='Matt Quevedo', city= 'New York', state= 'NY', phone= '300-400-5000', 
                 image_link='https://images.unsplash.com/photo-1495223153807-b916f75de8c5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=334&q=80', 
@@ -26,6 +28,14 @@ with app.app_context():
     
     artist3 = Artist(id=6, name='The Wild Sax Band', city= 'San Francisco', state= 'CA', phone= '432-325-5432', 
                 image_link='https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80')
+    
+    event1 = Event(start_time='2019-05-21T21:30:00.000Z', venues=venue1)    
+    event2 = Event(start_time='2019-06-15T23:00:00.000Z', venues=venue3)    
+    event3 = Event(start_time='2035-04-01T20:00:00.000Z', venues=venue3)    
+    event3 = Event(start_time='2035-04-08T20:00:00.000Z', venues=venue3)    
+    event3 = Event(start_time='2035-04-015T20:00:00.000Z', venues=venue3)
+    
+
     
     genre1 = Genre(genre='Alternative')
     genre2 = Genre(genre='Blues')
@@ -51,15 +61,23 @@ with app.app_context():
     artist2.genre.append(genre11)
     artist3.genre.append(genre11)
     artist3.genre.append(genre3)
-    venue1.venueGenre.append(genre11)
-    venue1.venueGenre.append(genre16)
-    venue1.venueGenre.append(genre3)
-    venue1.venueGenre.append(genre6)
-    venue1.venueGenre.append(genre19)
-
+    venue1.genres.append(genre11)
+    venue1.genres.append(genre16)
+    venue1.genres.append(genre3)
+    venue1.genres.append(genre6)
+    venue1.genres.append(genre19)
+    venue2.genres.append(genre3)
+    venue2.genres.append(genre15)
+    venue2.genres.append(genre8)
+    venue1.venueArtist.append(artist1)
+    venue3.venueArtist.append(artist2)
+    venue3.venueArtist.append(artist3)
+    venue3.venueArtist.append(artist3)
+    venue3.venueArtist.append(artist3)
 
     db.session.add_all([venue1, venue2, venue3])
     db.session.add_all([artist1, artist2, artist3])
     db.session.add_all([genre1, genre2, genre3, genre4, genre5, genre6, genre7, genre8, genre9, genre10, genre11, genre12, genre13, genre14, genre15, genre16, genre17, genre18, genre19])
+    db.session.add_all([event1, event2, event3])
     db.session.commit()
   
