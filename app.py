@@ -46,10 +46,9 @@ def index():
 @app.route('/venues')
 def venues():
   # TODO: replace with real venues data.
-  #       num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
+  # num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
   data = []
   query_venues = Venue.query.order_by(Venue.state).all()
-  print(query_venues)
   for qv in query_venues:
     venue_dict = {
       "city": qv.city,
@@ -69,29 +68,6 @@ def venues():
           item["venues"].append(venuecol)
     else:
       data.append(venue_dict)
-
-    '''
-  data=[{
-    "city": "San Francisco",
-    "state": "CA",
-    "venues": [{
-      "id": 1,
-      "name": "The Musical Hop",
-      "num_upcoming_shows": 0,
-    }, {
-      "id": 3,
-      "name": "Park Square Live Music & Coffee",
-      "num_upcoming_shows": 1,
-    }]
-  }, {
-    "city": "New York",
-    "state": "NY",
-    "venues": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
-  }]'''
   return render_template('pages/venues.html', areas=data)
 
 @app.route('/venues/search', methods=['POST'])
@@ -99,20 +75,45 @@ def search_venues():
   # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
   # seach for Hop should return "The Musical Hop".
   # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
+  search_Term = request.form.get('search_term', '')
+  query_Search = Venue.query.filter(Venue.name.like(f'%{search_Term}%'))
   response={
-    "count": 1,
-    "data": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
-  }
+    "count": query_Search.count(),
+    "data": []
+    }
+  for record in query_Search:
+    resultSearch={
+      "id": record.id,
+      "name": record.name,
+      "num_upcoming_shows": 0   #####???????????????/
+    }
+    response["data"].append(resultSearch)
   return render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
   # shows the venue page with the given venue_id
   # TODO: replace with real venue data from the venues table, using venue_id
+  venueID = Venue.query.get(venue_id)
+  data={
+    "id": venueID.id,
+    "name": venueID.name,
+    "genres": [],
+    "address": venueID.address,
+    "city": venueID.city,
+    "state": venueID.state,
+    "phone": venueID.phone,
+    "website": venueID.website,
+    "facebook_link": venueID.facebook_link,
+    "seeking_talent": venueID.seeking_talent,
+    "seeking_description": venueID.seeking_description,
+    "image_link": venueID.image_link,
+    "past_shows": [],
+    "upcoming_shows": [],
+    "past_shows_count": 1,
+    "upcoming_shows_count": 0
+  }
+  '''
   data1={
     "id": 1,
     "name": "The Musical Hop",
@@ -191,6 +192,7 @@ def show_venue(venue_id):
     "upcoming_shows_count": 1,
   }
   data = list(filter(lambda d: d['id'] == venue_id, [data1, data2, data3]))[0]
+  '''
   return render_template('pages/show_venue.html', venue=data)
 
 #  Create Venue
@@ -227,16 +229,14 @@ def delete_venue(venue_id):
 @app.route('/artists')
 def artists():
   # TODO: replace with real data returned from querying the database
-  data=[{
-    "id": 4,
-    "name": "Guns N Petals",
-  }, {
-    "id": 5,
-    "name": "Matt Quevedo",
-  }, {
-    "id": 6,
-    "name": "The Wild Sax Band",
-  }]
+  data = []
+  query_artists = Artist.query.order_by(Artist.name).all()
+  for qa in query_artists:
+    res={
+      "id": qa.id,
+      "name": qa.name
+    }
+    data.append(res)
   return render_template('pages/artists.html', artists=data)
 
 @app.route('/artists/search', methods=['POST'])
@@ -244,14 +244,19 @@ def search_artists():
   # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
   # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
   # search for "band" should return "The Wild Sax Band".
+  search_Artist = request.form.get('search_term', '')
+  query_Artist = Artist.query.filter(Artist.name.ilike(f'%{search_Artist}%'))
   response={
-    "count": 1,
-    "data": [{
-      "id": 4,
-      "name": "Guns N Petals",
-      "num_upcoming_shows": 0,
-    }]
-  }
+    "count": query_Artist.count(),
+    "data": []
+    }
+  for record in query_Artist:
+    resultSearch={
+      "id": record.id,
+      "name": record.name,
+      "num_upcoming_shows": 0   #####???????????????/
+    }
+    response["data"].append(resultSearch)
   return render_template('pages/search_artists.html', results=response, search_term=request.form.get('search_term', ''))
 
 @app.route('/artists/<int:artist_id>')
