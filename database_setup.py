@@ -64,7 +64,7 @@ class Genre(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     genre = db.Column(db.String(80), nullable = False)
     def __repr__(self):
-      return f'<Genre {self.id}, {self.name}>'
+      return f'<Genre {self.id}, {self.genre}>'
 
 class Artist(db.Model):
     __tablename__ = 'artists'
@@ -79,6 +79,7 @@ class Artist(db.Model):
     website = db.Column(db.String(120))
     seeking_venue = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String(), default="")
+    event_artists = db.relationship('Event', backref='artists')
     genre = db.relationship('Genre', secondary=artist_genre, backref=db.backref('artists', lazy=True))
 
     def __repr__(self):
@@ -93,6 +94,7 @@ class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     start_time = db.Column(db.DateTime, nullable=False)
     venue_id = db.Column(db.Integer, db.ForeignKey('venues.id'))
+    artist_id = db.Column(db.Integer, db.ForeignKey('artists.id'))
 
     def __repr__(self):
       return f'<ArtEventist {self.id}, {self.start_time}>'
