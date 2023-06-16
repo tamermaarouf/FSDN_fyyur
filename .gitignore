@@ -6,6 +6,8 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+.github
+
 .Python
 build/
 develop-eggs/
@@ -104,6 +106,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
+.github
 .env
 .venv
 env/
@@ -111,6 +114,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+fyyur
 
 # Spyder project settings
 .spyderproject
