@@ -51,32 +51,6 @@ def venues():
   data = []
   query_venues = Venue.query.order_by(Venue.state).all()
   for qv in query_venues:
-    print('id: ',qv.id)
-    print('name: ',qv.name)
-    print('genres', qv.genres)
-    for qvGenre in qv.genres:
-      print('ID:', qvGenre.id)
-      print('Genre: ', qvGenre.genre)
-    print('city', qv.city)
-    print('state', qv.state)
-    print('address', qv.address)
-    print('phone', qv.phone)
-    print('image_link', qv.image_link)
-    print('facebook_link', qv.facebook_link)
-    print('website', qv.website)
-    print('seeking_talent', qv.seeking_talent)
-    print('seeking_description', qv.seeking_description)
-    print('event:', qv.events)
-    for qvEvent in qv.events:
-      print('ID: ', qvEvent.id) 
-      print('start_time: ', qvEvent.start_time) 
-      print('venue_id: ', qvEvent.venue_id) 
-      print('artist_id: ', qvEvent.artist_id)
-    print('venue_artist', qv.venueArtist)
-    for va in qv.venueArtist:
-      print('va', va)
-      print('artist_name:>>><<<<<', va.name)
-    print('------------------')
     venue_dict = {
       "city": qv.city,
       "state": qv.state,
@@ -166,7 +140,7 @@ def show_venue(venue_id):
       "address": vID.address,
       "city": vID.city,
       "state": vID.state,
-     "phone": vID.phone,
+      "phone": vID.phone,
       "website": vID.website,
       "facebook_link": vID.facebook_link,
       "seeking_talent": vID.seeking_talent,
@@ -203,7 +177,11 @@ def create_venue_submission():
 def delete_venue(venue_id):
   # TODO: Complete this endpoint for taking a venue_id, and using
   # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
-
+  query = Venue.query.filter(id=venue_id)
+  dcc_venue = query.one()
+  session.delete(dcc_venue)
+  session.commit()
+  dcc_venue = query.first()
   # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
   # clicking that button delete it from the db then redirect the user to the homepage
   return None
@@ -242,7 +220,7 @@ def search_artists():
     resultSearch={
       "id": record.id,
       "name": record.name,
-      "num_upcoming_shows": counter                   ####---------------> Not Solve
+      "num_upcoming_shows": counter
     }
     response["data"].append(resultSearch)
   return render_template('pages/search_artists.html', results=response, search_term=request.form.get('search_term', ''))
@@ -297,10 +275,10 @@ def show_artist(artist_id):
       "seeking_venue": ArtID.seeking_venue,
       "seeking_description": ArtID.seeking_description,
       "image_link": ArtID.image_link,
-      "past_shows": past_shows,           ####---------------> Not Solve
-      "upcoming_shows": upcoming_shows,       ####---------------> Not Solve
-      "past_shows_count": past_counter,      ####---------------> Not Solve
-      "upcoming_shows_count": up_counter   ####---------------> Not Solve
+      "past_shows": past_shows,           
+      "upcoming_shows": upcoming_shows,       
+      "past_shows_count": past_counter,      
+      "upcoming_shows_count": up_counter   
     }
   return render_template('pages/show_artist.html', artist=data)
 
@@ -312,10 +290,13 @@ def edit_artist(artist_id):
   # TODO: populate form with fields from artist with ID <artist_id>
   # Get single artist entry
   res = Artist.query.get(artist_id)
+  genre_arr = []
+  for vg in res.genre:
+    genre_arr.append(vg.genre)
   artist={
     "id": res.id,
     "name": res.name,
-    "genres": [],
+    "genres": genre_arr,
     "city": res.city,
     "state": res.state,
     "phone": res.phone,
@@ -325,6 +306,7 @@ def edit_artist(artist_id):
     "seeking_description": res.seeking_description,
     "image_link": res.image_link
   }
+  print(artist)
   return render_template('forms/edit_artist.html', form=form, artist=artist)
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
@@ -388,42 +370,21 @@ def create_artist_submission():
 def shows():
   # displays list of shows at /shows
   # TODO: replace with real venues data.
-  data=[{
-    "venue_id": 1,
-    "venue_name": "The Musical Hop",
-    "artist_id": 4,
-    "artist_name": "Guns N Petals",
-    "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
-    "start_time": "2019-05-21T21:30:00.000Z"
-  }, {
-    "venue_id": 3,
-    "venue_name": "Park Square Live Music & Coffee",
-    "artist_id": 5,
-    "artist_name": "Matt Quevedo",
-    "artist_image_link": "https://images.unsplash.com/photo-1495223153807-b916f75de8c5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=334&q=80",
-    "start_time": "2019-06-15T23:00:00.000Z"
-  }, {
-    "venue_id": 3,
-    "venue_name": "Park Square Live Music & Coffee",
-    "artist_id": 6,
-    "artist_name": "The Wild Sax Band",
-    "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-    "start_time": "2035-04-01T20:00:00.000Z"
-  }, {
-    "venue_id": 3,
-    "venue_name": "Park Square Live Music & Coffee",
-    "artist_id": 6,
-    "artist_name": "The Wild Sax Band",
-    "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-    "start_time": "2035-04-08T20:00:00.000Z"
-  }, {
-    "venue_id": 3,
-    "venue_name": "Park Square Live Music & Coffee",
-    "artist_id": 6,
-    "artist_name": "The Wild Sax Band",
-    "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-    "start_time": "2035-04-15T20:00:00.000Z"
-  }]
+  data=[]
+  query_venues = Venue.query.order_by(Venue.state).all()
+  for qv in query_venues:
+    for EV in qv.events:
+      artistID = Artist.query.filter(Artist.id==EV.artist_id)
+      for AID in artistID:
+        res={
+        "venue_id": qv.id,
+        "venue_name": qv.name,
+        "artist_id": AID.id,
+        "artist_name": AID.name,
+        "artist_image_link": AID.image_link,
+        "start_time": str(EV.start_time)
+        }
+      data.append(res)
   return render_template('pages/shows.html', shows=data)
 
 @app.route('/shows/create')
@@ -436,6 +397,7 @@ def create_shows():
 def create_show_submission():
   # called to create new shows in the db, upon submitting new show listing form
   # TODO: insert form data as a new Show record in the db, instead
+  form = ShowForm()
 
   # on successful db insert, flash success
   flash('Show was successfully listed!')
@@ -478,3 +440,34 @@ if __name__ == '__main__':
     app.debug = True
     port = int(os.environ.get('PORT', 2023))
     app.run(host='0.0.0.0', port=port)
+
+
+
+'''
+print('id: ',qv.id)
+print('name: ',qv.name)
+print('genres', qv.genres)
+for qvGenre in qv.genres:
+  print('ID:', qvGenre.id)
+  print('Genre: ', qvGenre.genre)
+print('city', qv.city)
+print('state', qv.state)
+print('address', qv.address)
+print('phone', qv.phone)
+print('image_link', qv.image_link)
+print('facebook_link', qv.facebook_link)
+print('website', qv.website)
+print('seeking_talent', qv.seeking_talent)
+print('seeking_description', qv.seeking_description)
+print('event:', qv.events)
+for qvEvent in qv.events:
+  print('ID: ', qvEvent.id) 
+  print('start_time: ', qvEvent.start_time) 
+  print('venue_id: ', qvEvent.venue_id) 
+  print('artist_id: ', qvEvent.artist_id)
+print('venue_artist', qv.venueArtist)
+for va in qv.venueArtist:
+  print('va', va)
+  print('artist_name:>>><<<<<', va.name)
+print('------------------')
+'''
