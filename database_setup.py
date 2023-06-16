@@ -52,7 +52,7 @@ class Venue(db.Model):
     website = db.Column(db.String(120))
     seeking_talent = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String(120), default="")
-    events = db.relationship('Event', backref='venues')
+    events = db.relationship('Show', backref='venues')
     venueArtist = db.relationship('Artist', secondary=venue_artist, backref=db.backref('venues', lazy=True))
 
     def __repr__(self):
@@ -79,7 +79,7 @@ class Artist(db.Model):
     website = db.Column(db.String(120))
     seeking_venue = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String(), default="")
-    event_artists = db.relationship('Event', backref='artists')
+    event_artists = db.relationship('Show', backref='artists')
     genre = db.relationship('Genre', secondary=artist_genre, backref=db.backref('artists', lazy=True))
 
     def __repr__(self):
@@ -88,7 +88,7 @@ class Artist(db.Model):
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
     # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
-class Event(db.Model):
+class Show(db.Model):
     __tablename__ = 'event'
     #----------------------------> MAPPER <------------------------#
     id = db.Column(db.Integer, primary_key=True)
@@ -97,4 +97,4 @@ class Event(db.Model):
     artist_id = db.Column(db.Integer, db.ForeignKey('artists.id'))
 
     def __repr__(self):
-      return f'<ArtEventist {self.id}, {self.start_time}>'
+      return f'<ArtEventist {self.venue_id}, {self.start_time}, {self.artist_id}>'

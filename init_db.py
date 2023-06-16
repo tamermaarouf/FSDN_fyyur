@@ -1,5 +1,5 @@
 from database_setup import app
-from database_setup import db, Venue, Artist, Genre, Event 
+from database_setup import db, Venue, Artist, Genre, Show 
 from flask_migrate import Migrate
 from flask import Flask
 
@@ -29,11 +29,11 @@ with app.app_context():
     artist3 = Artist(id=6, name='The Wild Sax Band', city= 'San Francisco', state= 'CA', phone= '432-325-5432', 
                 image_link='https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80')
     
-    event1 = Event(start_time='2019-05-21T21:30:00.000Z', venues=venue1, artists=artist1)    
-    event2 = Event(start_time='2019-06-15T23:00:00.000Z', venues=venue3, artists=artist2)    
-    event3 = Event(start_time='2035-04-01T20:00:00.000Z', venues=venue3, artists=artist3)    
-    event4 = Event(start_time='2035-04-08T20:00:00.000Z', venues=venue3, artists=artist3)    
-    event5 = Event(start_time='2035-04-015T20:00:00.000Z', venues=venue3, artists=artist3)
+    event1 = Show(start_time='2019-05-21T21:30:00.000Z', venues=venue1, artists=artist1)    
+    event2 = Show(start_time='2019-06-15T23:00:00.000Z', venues=venue3, artists=artist2)    
+    event3 = Show(start_time='2035-04-01T20:00:00.000Z', venues=venue3, artists=artist3)    
+    event4 = Show(start_time='2035-04-08T20:00:00.000Z', venues=venue3, artists=artist3)    
+    event5 = Show(start_time='2035-04-015T20:00:00.000Z', venues=venue3, artists=artist3)
     
 
     

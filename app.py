@@ -14,7 +14,7 @@ from flask_wtf import Form
 from forms import *
 from flask_migrate import Migrate
 from sqlalchemy.sql import func
-from database_setup import app, db, Venue, Artist, Genre, artist_genre, Event
+from database_setup import app, db, Venue, Artist, Genre, artist_genre, Show
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
