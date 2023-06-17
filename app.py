@@ -165,6 +165,42 @@ def create_venue_form():
 def create_venue_submission():
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
+  form = VenueForm()
+  print(form)
+  for key in request.form:
+    print(key)
+  name = request.form['name'].strip()
+  genre_venue = request.form.getlist('genres')
+  address = request.form['address'].strip()
+  city = request.form['city'].strip()
+  state = request.form['state']
+  phone = request.form['phone']
+  website = request.form['website_link'].strip()
+  facebook_link = request.form['facebook_link'].strip()
+  seeking_talent = True if request.form['seeking_talent'] == 'y' else False
+  seeking_description = request.form['seeking_description'].strip()
+  image_link = request.form['image_link'].strip()
+
+  # Redirect back to form if errors in form validation
+  if not form.validate():
+    flash( form.errors )
+    return redirect(url_for('create_venue_submission'))
+  else:
+    error_in_insert = False
+    # Insert form data into DB
+    try:
+      # creates the new venue with all fields but not genre yet
+      create_venue =  Venue(name=name, address=address, city=city, state=state, phone=phone,image_link=image_link, facebook_link=facebook_link, 
+                            website=website, seeking_talent=True, seeking_description=seeking_description)
+      for genre in genre_venue:
+        print(genre)
+    except Exception as e:
+      error_in_insert = True
+      print(f'Exception "{e}" in create_venue_submission()')
+      db.session.rollback()
+    finally:
+      db.session.close()
+  print(name, genre_venue, address, city, state, phone,website, facebook_link, seeking_talent)
 
   # on successful db insert, flash success
   flash('Venue ' + request.form['name'] + ' was successfully listed!')
@@ -306,7 +342,6 @@ def edit_artist(artist_id):
     "seeking_description": res.seeking_description,
     "image_link": res.image_link
   }
-  print(artist)
   return render_template('forms/edit_artist.html', form=form, artist=artist)
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
@@ -318,7 +353,6 @@ def edit_artist_submission(artist_id):
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
-  form = VenueForm()
   venue={
     "id": 1,
     "name": "The Musical Hop",
