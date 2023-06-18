@@ -13,9 +13,10 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
+import datetime
 from flask_migrate import Migrate
 from sqlalchemy.sql import func
-from database_setup import app, db, Venue, Artist, Genre, artist_genre, Show
+from database_setup import app, db, Venue, Artist, Genre, artist_genre, Shows
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -23,7 +24,7 @@ from database_setup import app, db, Venue, Artist, Genre, artist_genre, Show
 #----------------------------------------------------------------------------#
 # Filters.
 #----------------------------------------------------------------------------#
-
+'''
 def format_datetime(value, format='medium'):
   date = dateutil.parser.parse(value)
   if format == 'full':
@@ -31,6 +32,17 @@ def format_datetime(value, format='medium'):
   elif format == 'medium':
       format="EE MM, dd, y h:mma"
   return babel.dates.format_datetime(date, format, locale='en')
+
+app.jinja_env.filters['datetime'] = format_datetime
+'''
+def format_datetime(date, format='%x %X'):
+    # check whether the value is a datetime object
+    if not isinstance(date, (datetime.date, datetime.datetime)):
+        try:
+            date = datetime.datetime.strptime(str(date), '%Y-%m-%d').date()
+        except Exception:
+            return date
+    return date.strftime(format)
 
 app.jinja_env.filters['datetime'] = format_datetime
 
@@ -78,8 +90,7 @@ def search_venues():
     "data": []
     }
   for record in query_Search:
-    print('count: ',(Show.query.filter(Show.venue_id==record.id).filter(Show.start_time>datetime.now()).all()))
-    for event in record.events:
+    for event in record.show_venue:
       if ((event.start_time) > (datetime.now())):
         counter += 1
       resultSearch={
@@ -95,41 +106,30 @@ def show_venue(venue_id):
   # shows the venue page with the given venue_id
   # TODO: replace with real venue data from the venues table, using venue_id
   venueID = Venue.query.get(venue_id)
-  print(venueID.id, venueID.name)
+  print('VENUE----->GENRE',Genre.query.join(Venue.genres).filter(Venue.id==venue_id).all())
   genre_arr = []
   past_shows = []
   upcoming_shows = []
   past_shows_response={}
   upcoming_shows_response={}
-  past_counter = 0
-  up_counter = 0
   for vg in venueID.genres:
-    genre_arr.append(vg.genre) 
-  for EV in venueID.events:
-    if (EV.start_time) < (datetime.now()):
-      artistID = Artist.query.filter(Artist.id==EV.artist_id)
-      artist_ID = Show.query.join(Artist).all()
-      print(artist_ID)
-      for AID in artistID:
-        past_counter += 1
-        past_shows_response={
-          "artist_id": AID.id,
-          "artist_name": AID.name,
-          "artist_image_link": AID.image_link,
-          "start_time": str(EV.start_time)
-        }
-        past_shows.append(past_shows_response)
-    else:
-        artistID = Artist.query.filter(Artist.id==EV.artist_id)
-        for VA in artistID:
-          up_counter += 1
-          upcoming_shows_response={
-            "artist_id": VA.id,
-            "artist_name": VA.name,
-            "artist_image_link": VA.image_link,
-            "start_time": str(EV.start_time)
-          }
-          upcoming_shows.append(upcoming_shows_response)
+    genre_arr.append(vg.genre)
+  past_shows_response = Shows.query.join(Artist).filter(Shows.venue_id==venue_id).filter(Shows.start_time<datetime.datetime.now()).all()
+  for res in past_shows_response:
+    past_shows.append({
+      "artist_id": res.artist_id,
+      "artist_name": res.artists.name,
+      "artist_image_link": res.artists.image_link,
+      "start_time": res.start_time
+    })
+  upcoming_shows_response = Shows.query.join(Artist).filter(Shows.venue_id==venue_id).filter(Shows.start_time>datetime.datetime.now()).all()
+  for up_res in upcoming_shows_response:
+    upcoming_shows.append({
+      "artist_id": up_res.artist_id,
+      "artist_name": up_res.artists.name,
+      "artist_image_link": up_res.artists.image_link,
+      "start_time": up_res.start_time
+    })
   data={
     'id': venueID.id,
     "name": venueID.name,
@@ -145,8 +145,8 @@ def show_venue(venue_id):
     "image_link": venueID.image_link,
     "past_shows": past_shows,
     "upcoming_shows": upcoming_shows,
-    "past_shows_count": past_counter,
-    "upcoming_shows_count": up_counter
+    "past_shows_count": len(past_shows_response),
+    "upcoming_shows_count": len(upcoming_shows_response)
   }
   return render_template('pages/show_venue.html', venue=data)
 
@@ -165,17 +165,17 @@ def create_venue_submission():
   form = VenueForm()
   for key in request.form:
     print(key)
-  name = request.form['name'].strip()
+  name = request.form['name']
   genre_venue = request.form.getlist('genres')
-  address = request.form['address'].strip()
-  city = request.form['city'].strip()
+  address = request.form['address']
+  city = request.form['city']
   state = request.form['state']
   phone = request.form['phone']
-  website = request.form['website_link'].strip()
-  facebook_link = request.form['facebook_link'].strip()
+  website = request.form['website_link']
+  facebook_link = request.form['facebook_link']
   seeking_talent = True if request.form['seeking_talent'] == 'y' else False
-  seeking_description = request.form['seeking_description'].strip()
-  image_link = request.form['image_link'].strip()
+  seeking_description = request.form['seeking_description']
+  image_link = request.form['image_link']
   print(name, genre_venue, address, city, state, phone,website, facebook_link, seeking_talent)
   genre = ""
                           
@@ -201,8 +201,8 @@ def create_venue_submission():
       print(genre)
       new_genre=Genre(genre=genre)
       create_venue.genres.append(new_genre)
-    db.session.add(create_venue)
-    db.session.commit()
+    # db.session.add(create_venue)
+    # db.session.commit()
   except Exception as e:
     error_in_insert = True
     print(f'Exception "{e}" in create_venue_submission()')
@@ -287,7 +287,7 @@ def show_artist(artist_id):
   for ArtID in artistID:
     for vg in ArtID.genre:
       genre_arr.append(vg.genre) 
-    for EV in ArtID.event_artists:
+    for EV in ArtID.show_artists:
       if (EV.start_time) < (datetime.now()):
         venueID = Venue.query.filter(Venue.id==EV.venue_id)
         for ven in venueID:
@@ -418,7 +418,7 @@ def shows():
   data=[]
   query_venues = Venue.query.order_by(Venue.state).all()
   for qv in query_venues:
-    for EV in qv.events:
+    for EV in qv.show_venue:
       artistID = Artist.query.filter(Artist.id==EV.artist_id)
       for AID in artistID:
         res={

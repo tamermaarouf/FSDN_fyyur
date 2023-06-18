@@ -42,7 +42,7 @@ class Venue(db.Model):
     #----------------------------> MAPPER <------------------------#
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    genres = db.relationship('Genre', secondary=venue_genre, backref=db.backref('venu', lazy=True))
+    genres = db.relationship('Genre', secondary=venue_genre, lazy='subquery', backref=db.backref('venue', lazy=True))
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
     address = db.Column(db.String(120))
@@ -52,7 +52,7 @@ class Venue(db.Model):
     website = db.Column(db.String(120))
     seeking_talent = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String(120), default="")
-    events = db.relationship('Show', backref='venues')
+    show_venue = db.relationship('Shows', backref='venues')
     venueArtist = db.relationship('Artist', secondary=venue_artist, backref=db.backref('venues', lazy=True))
 
     def __repr__(self):
@@ -79,17 +79,17 @@ class Artist(db.Model):
     website = db.Column(db.String(120))
     seeking_venue = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String(), default="")
-    event_artists = db.relationship('Show', backref='artists')
-    genre = db.relationship('Genre', secondary=artist_genre, backref=db.backref('artists', lazy=True))
+    show_artists = db.relationship('Shows', backref='artists')
+    genre = db.relationship('Genre', secondary=artist_genre, lazy='subquery', backref=db.backref('artist', lazy=True))
 
     def __repr__(self):
       return f'<Artist {self.id}, {self.name}>'
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
-    # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
-class Show(db.Model):
-    __tablename__ = 'event'
+    # TODO Implement Shows and Artist models, and complete all model relationships and properties, as a database migration.
+class Shows(db.Model):
+    __tablename__ = 'show'
     #----------------------------> MAPPER <------------------------#
     id = db.Column(db.Integer, primary_key=True)
     start_time = db.Column(db.DateTime, nullable=False)
