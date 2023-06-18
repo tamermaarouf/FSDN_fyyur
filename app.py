@@ -106,7 +106,6 @@ def show_venue(venue_id):
   # shows the venue page with the given venue_id
   # TODO: replace with real venue data from the venues table, using venue_id
   venueID = Venue.query.get(venue_id)
-  print('VENUE----->GENRE',Genre.query.join(Venue.genres).filter(Venue.id==venue_id).all())
   genre_arr = []
   past_shows = []
   upcoming_shows = []
@@ -278,57 +277,47 @@ def search_artists():
 def show_artist(artist_id):
   # shows the artist page with the given artist_id
   # TODO: replace with real artist data from the artist table, using artist_id
-  artistID = Artist.query.filter_by(id=artist_id)
+  artistID = Artist.query.get(artist_id)
   genre_arr = []
   past_shows = []
   upcoming_shows = []
   past_shows_response={}
   upcoming_shows_response={}
-  past_counter = 0
-  up_counter = 0
-  for ArtID in artistID:
-    for vg in ArtID.genre:
-      genre_arr.append(vg.genre) 
-    for EV in ArtID.show_artists:
-      if (EV.start_time) < (datetime.now()):
-        venueID = Venue.query.filter(Venue.id==EV.venue_id)
-        for ven in venueID:
-          past_counter += 1
-          past_shows_response={
-            "venue_id": ven.id,
-            "venue_name": ven.name,
-            "venue_image_link": ven.image_link,
-            "start_time": str(EV.start_time)
-          }
-          past_shows.append(past_shows_response)
-      else:
-        venueID = Venue.query.filter(Venue.id==EV.venue_id)
-        for VA in venueID:
-          up_counter += 1
-          upcoming_shows_response={
-            "venue_id": VA.id,
-            "venue_name": VA.name,
-            "venue_image_link": VA.image_link,
-            "start_time": str(EV.start_time)
-          }
-          upcoming_shows.append(upcoming_shows_response)
-    data={
-      "id": ArtID.id,
-      "name": ArtID.name,
-      "genres": genre_arr,
-      "city": ArtID.city,
-      "state": ArtID.state,
-      "phone": ArtID.phone,
-      "website": ArtID.website,
-      "facebook_link": ArtID.facebook_link,
-      "seeking_venue": ArtID.seeking_venue,
-      "seeking_description": ArtID.seeking_description,
-      "image_link": ArtID.image_link,
-      "past_shows": past_shows,           
-      "upcoming_shows": upcoming_shows,       
-      "past_shows_count": past_counter,      
-      "upcoming_shows_count": up_counter   
-    }
+  for vg in artistID.genre:
+    genre_arr.append(vg.genre)
+  past_shows_response = Shows.query.join(Venue).filter(Shows.artist_id==artist_id).filter(Shows.start_time<datetime.datetime.now()).all()
+  for res in past_shows_response:
+    past_shows.append({
+      "venue_id": res.venue_id,
+      "venue_name": res.venues.name,
+      "venue_image_link": res.venues.image_link,
+      "start_time": res.start_time
+    })
+  upcoming_shows_response = Shows.query.join(Venue).filter(Shows.artist_id==artist_id).filter(Shows.start_time>datetime.datetime.now()).all()
+  for up_res in upcoming_shows_response:
+    upcoming_shows.append({
+      "venue_id": up_res.venue_id,
+      "venue_name": up_res.venues.name,
+      "venue_image_link": up_res.venues.image_link,
+      "start_time": up_res.start_time
+    })
+  data={
+    "id": artistID.id,
+    "name": artistID.name,
+    "genres": genre_arr,
+    "city": artistID.city,
+    "state": artistID.state,
+    "phone": artistID.phone,
+    "website": artistID.website,
+    "facebook_link": artistID.facebook_link,
+    "seeking_venue": artistID.seeking_venue,
+    "seeking_description": artistID.seeking_description,
+    "image_link": artistID.image_link,
+    "past_shows": past_shows,           
+    "upcoming_shows": upcoming_shows,
+    "past_shows_count": len(past_shows_response),
+    "upcoming_shows_count": len(upcoming_shows_response)  
+  }
   return render_template('pages/show_artist.html', artist=data)
 
 #  Update
