@@ -177,32 +177,22 @@ def create_venue_submission():
   seeking_description = request.form['seeking_description']
   image_link = request.form['image_link']
   print(name, genre_venue, address, city, state, phone,website, facebook_link, seeking_talent)
-  genre = ""
-                          
-  # for genre in genre_venue:
-  #   genre = Genre(genre)
-  #   print(genre)
-    # create_venue.genres.append(genre[i])
-    # db.session.add(genre[i])
-
-  # Redirect back to form if errors in form validation
-  # if not form.validate():
-  #   flash( form.errors )
-  #   return redirect(url_for('create_venue_submission'))
-  # else:
   error_in_insert = False
   # Insert form data into DB
   try:
     # creates the new venue with all fields but not genre yet
     create_venue =  Venue(name=name, address=address, city=city, state=state, phone=phone,image_link=image_link, facebook_link=facebook_link, 
-                          website=website, seeking_talent=True, seeking_description=seeking_description)
+                          website=website, seeking_talent=seeking_talent, seeking_description=seeking_description)
                           
-    for genre in genre_venue:
-      print(genre)
-      new_genre=Genre(genre=genre)
-      create_venue.genres.append(new_genre)
-    # db.session.add(create_venue)
-    # db.session.commit()
+    # for genre in genre_venue:
+    #   print(genre)
+    #   new_genre=Genre(genre=genre)
+      
+    new_genres = Genre(genre=genre_venue)
+    create_venue.genres.append(new_genres)
+    # db.session.refresh(create_venue)
+    db.session.add(create_venue)
+    db.session.commit()
   except Exception as e:
     error_in_insert = True
     print(f'Exception "{e}" in create_venue_submission()')
@@ -224,14 +214,26 @@ def create_venue_submission():
 def delete_venue(venue_id):
   # TODO: Complete this endpoint for taking a venue_id, and using
   # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
-  query = Venue.query.filter(id=venue_id)
-  dcc_venue = query.one()
-  session.delete(dcc_venue)
-  session.commit()
-  dcc_venue = query.first()
+  delete_venue = Venue.query.get(venue_id)
+  delete_name = delete_venue.name
+  error_in_insert = False
+  try:
+    db.session.delete(delete_venue)
+    db.session.commit()
+  except:
+    error_in_insert = True
+    db.session.rollback()
+  finally:
+    db.session.close()
+  if error_in_insert:
+    # if error occur, error message pop up
+    flash('An error occurred deleting venue' + delete_name)
+  else:
+    # if success, success message pop up
+    flash('Successfully removed venue ' + delete_name)
   # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
   # clicking that button delete it from the db then redirect the user to the homepage
-  return None
+  return render_template('pages/home.html')
 
 #  Artists
 #  ----------------------------------------------------------------
@@ -261,8 +263,8 @@ def search_artists():
     }
   counter = 0
   for record in query_Artist:
-    for event in record.event_artists:
-      if ((event.start_time) > (datetime.now())):
+    for event in record.show_artists:
+      if ((event.start_time) > (datetime.datetime.now())):
         counter += 1
     resultSearch={
       "id": record.id,
