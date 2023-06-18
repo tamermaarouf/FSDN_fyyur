@@ -2,6 +2,7 @@
 # Imports
 #----------------------------------------------------------------------------#
 import os
+import sys
 import json
 import dateutil.parser
 import babel
@@ -49,26 +50,19 @@ def venues():
   # TODO: replace with real venues data.
   # num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
   data = []
-  query_venues = Venue.query.order_by(Venue.state).all()
-  for qv in query_venues:
-    venue_dict = {
+  city_distinct =  Venue.query.with_entities(Venue.city, Venue.state).distinct()
+  for qv in city_distinct:
+    data_venues = []
+    for item in  Venue.query.filter(Venue.city==qv.city).filter(Venue.state==qv.state).all():
+        data_venues.append({
+          "id": item.id,
+          "name": item.name
+        })
+    data.append({
       "city": qv.city,
       "state": qv.state,
-      "venues": []
-    }
-    venuecol = {
-      "id": qv.id,
-      "name": qv.name
-    }
-    if len(data) > 0:
-      for item in data:
-        if qv.city == item['city']:
-          item["venues"].append(venuecol)
-        else:
-          data.append(venue_dict)
-    else:
-      venue_dict["venues"].append(venuecol)
-      data.append(venue_dict)
+      "venues": data_venues      
+    })
   return render_template('pages/venues.html', areas=data)
 
 @app.route('/venues/search', methods=['POST'])
@@ -84,14 +78,15 @@ def search_venues():
     "data": []
     }
   for record in query_Search:
+    print('count: ',(Show.query.filter(Show.venue_id==record.id).filter(Show.start_time>datetime.now()).all()))
     for event in record.events:
       if ((event.start_time) > (datetime.now())):
         counter += 1
-    resultSearch={
-      "id": record.id,
-      "name": record.name,
-      "num_upcoming_shows": counter  
-    }
+      resultSearch={
+        "id": record.id,
+        "name": record.name,
+        "num_upcoming_shows": counter
+      }
     response["data"].append(resultSearch)
   return render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
 
@@ -99,7 +94,8 @@ def search_venues():
 def show_venue(venue_id):
   # shows the venue page with the given venue_id
   # TODO: replace with real venue data from the venues table, using venue_id
-  venuesID = Venue.query.filter_by(id=venue_id)
+  venueID = Venue.query.get(venue_id)
+  print(venueID.id, venueID.name)
   genre_arr = []
   past_shows = []
   upcoming_shows = []
@@ -107,50 +103,51 @@ def show_venue(venue_id):
   upcoming_shows_response={}
   past_counter = 0
   up_counter = 0
-  for vID in venuesID:
-    for vg in vID.genres:
-      genre_arr.append(vg.genre) 
-    for EV in vID.events:
-      if (EV.start_time) < (datetime.now()):
+  for vg in venueID.genres:
+    genre_arr.append(vg.genre) 
+  for EV in venueID.events:
+    if (EV.start_time) < (datetime.now()):
+      artistID = Artist.query.filter(Artist.id==EV.artist_id)
+      artist_ID = Show.query.join(Artist).all()
+      print(artist_ID)
+      for AID in artistID:
+        past_counter += 1
+        past_shows_response={
+          "artist_id": AID.id,
+          "artist_name": AID.name,
+          "artist_image_link": AID.image_link,
+          "start_time": str(EV.start_time)
+        }
+        past_shows.append(past_shows_response)
+    else:
         artistID = Artist.query.filter(Artist.id==EV.artist_id)
-        for AID in artistID:
-          past_counter += 1
-          past_shows_response={
-            "artist_id": AID.id,
-            "artist_name": AID.name,
-            "artist_image_link": AID.image_link,
+        for VA in artistID:
+          up_counter += 1
+          upcoming_shows_response={
+            "artist_id": VA.id,
+            "artist_name": VA.name,
+            "artist_image_link": VA.image_link,
             "start_time": str(EV.start_time)
           }
-          past_shows.append(past_shows_response)
-      else:
-          artistID = Artist.query.filter(Artist.id==EV.artist_id)
-          for VA in artistID:
-            up_counter += 1
-            upcoming_shows_response={
-              "artist_id": VA.id,
-              "artist_name": VA.name,
-              "artist_image_link": VA.image_link,
-              "start_time": str(EV.start_time)
-            }
-            upcoming_shows.append(upcoming_shows_response)
-    data={
-      'id': vID.id,
-      "name": vID.name,
-      "genres": genre_arr,
-      "address": vID.address,
-      "city": vID.city,
-      "state": vID.state,
-      "phone": vID.phone,
-      "website": vID.website,
-      "facebook_link": vID.facebook_link,
-      "seeking_talent": vID.seeking_talent,
-      "seeking_description": vID.seeking_description,
-      "image_link": vID.image_link,
-      "past_shows": past_shows,
-      "upcoming_shows": upcoming_shows,
-      "past_shows_count": past_counter,
-      "upcoming_shows_count": up_counter
-    }
+          upcoming_shows.append(upcoming_shows_response)
+  data={
+    'id': venueID.id,
+    "name": venueID.name,
+    "genres": genre_arr,
+    "address": venueID.address,
+    "city": venueID.city,
+    "state": venueID.state,
+    "phone": venueID.phone,
+    "website": venueID.website,
+    "facebook_link": venueID.facebook_link,
+    "seeking_talent": venueID.seeking_talent,
+    "seeking_description": venueID.seeking_description,
+    "image_link": venueID.image_link,
+    "past_shows": past_shows,
+    "upcoming_shows": upcoming_shows,
+    "past_shows_count": past_counter,
+    "upcoming_shows_count": up_counter
+  }
   return render_template('pages/show_venue.html', venue=data)
 
 #  Create Venue
@@ -166,7 +163,6 @@ def create_venue_submission():
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
   form = VenueForm()
-  print(form)
   for key in request.form:
     print(key)
   name = request.form['name'].strip()
@@ -180,33 +176,48 @@ def create_venue_submission():
   seeking_talent = True if request.form['seeking_talent'] == 'y' else False
   seeking_description = request.form['seeking_description'].strip()
   image_link = request.form['image_link'].strip()
+  print(name, genre_venue, address, city, state, phone,website, facebook_link, seeking_talent)
+  genre = ""
+                          
+  # for genre in genre_venue:
+  #   genre = Genre(genre)
+  #   print(genre)
+    # create_venue.genres.append(genre[i])
+    # db.session.add(genre[i])
 
   # Redirect back to form if errors in form validation
-  if not form.validate():
-    flash( form.errors )
-    return redirect(url_for('create_venue_submission'))
-  else:
-    error_in_insert = False
-    # Insert form data into DB
-    try:
-      # creates the new venue with all fields but not genre yet
-      create_venue =  Venue(name=name, address=address, city=city, state=state, phone=phone,image_link=image_link, facebook_link=facebook_link, 
-                            website=website, seeking_talent=True, seeking_description=seeking_description)
-      for genre in genre_venue:
-        print(genre)
-    except Exception as e:
-      error_in_insert = True
-      print(f'Exception "{e}" in create_venue_submission()')
-      db.session.rollback()
-    finally:
-      db.session.close()
-  print(name, genre_venue, address, city, state, phone,website, facebook_link, seeking_talent)
-
-  # on successful db insert, flash success
-  flash('Venue ' + request.form['name'] + ' was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
-  # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
-  # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+  # if not form.validate():
+  #   flash( form.errors )
+  #   return redirect(url_for('create_venue_submission'))
+  # else:
+  error_in_insert = False
+  # Insert form data into DB
+  try:
+    # creates the new venue with all fields but not genre yet
+    create_venue =  Venue(name=name, address=address, city=city, state=state, phone=phone,image_link=image_link, facebook_link=facebook_link, 
+                          website=website, seeking_talent=True, seeking_description=seeking_description)
+                          
+    for genre in genre_venue:
+      print(genre)
+      new_genre=Genre(genre=genre)
+      create_venue.genres.append(new_genre)
+    db.session.add(create_venue)
+    db.session.commit()
+  except Exception as e:
+    error_in_insert = True
+    print(f'Exception "{e}" in create_venue_submission()')
+    db.session.rollback()
+    print(sys.exc_info())
+  finally:
+    db.session.close()
+    if error_in_insert:
+      # TODO: on unsuccessful db insert, flash an error instead.
+      # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
+      flash('An error occured. Venue ' + request.form['name'] + '  Could not be listed!!')
+    else:      
+      # on successful db insert, flash success
+      flash('Venue ' + request.form['name'] + ' was successfully listed!')
+    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
   return render_template('pages/home.html')
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
