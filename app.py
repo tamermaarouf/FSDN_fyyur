@@ -162,8 +162,8 @@ def create_venue_submission():
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
   form = VenueForm()
-  for key in request.form:
-    print(key)
+  # for key in request.form:
+  #   print(key)
   name = request.form['name']
   genre_venue = request.form.getlist('genres')
   address = request.form['address']
@@ -175,7 +175,7 @@ def create_venue_submission():
   seeking_talent = True if request.form['seeking_talent'] == 'y' else False
   seeking_description = request.form['seeking_description']
   image_link = request.form['image_link']
-  print(name, genre_venue, address, city, state, phone,website, facebook_link, seeking_talent)
+  # print(name, genre_venue, address, city, state, phone,website, facebook_link, seeking_talent)
   error_in_insert = False
   # Insert form data into DB
   try:
@@ -328,14 +328,15 @@ def edit_artist(artist_id):
   # Get single artist entry
   res = Artist.query.get(artist_id)
   form = ArtistForm(obj=res)
-  print(res)
-  genre_arr = []
+  genres = {}
   for vg in res.genre:
-    genre_arr.append(vg.genre)
+    genres={
+      "genre": vg.genre
+      }
   artist={
     "id": res.id,
     "name": res.name,
-    "genres": genre_arr,
+    "genres": genres,
     "city": res.city,
     "state": res.state,
     "phone": res.phone,
@@ -353,30 +354,26 @@ def edit_artist_submission(artist_id):
   # artist record with ID <artist_id> using the new attributes
   form = ArtistForm()
   genres = []
-  for key in form:
-    print(key.name)
-
   error_in_insert = False
   artist = Artist.query.get(artist_id)
-  print(artist.name)
-  print(form['name'].data)
   try:
-    artist.name = form['name'].data
-    genres = form['genres'].data
-    artist.city = form['city'].data
-    artist.state = form['state'].data
-    artist.phone = form['phone'].data
-    artist.image_link = form['image_link'].data
-    artist.facebook_link = form['facebook_link'].data
-    artist.website = form['website_link'].data
-    artist.seeking_talent = form['seeking_venue'].data
-    artist.seeking_description = form['seeking_description'].data
-    # for g in genres:
-    print('----->',genres)
-    print('----->',form.name)
-    # genre1 = Genre(genre=g.data)
-    # artist.genre.append(genre1)
-    # db.session.commit()
+    artist.name = request.form['name']
+    artist.city = request.form['city']
+    artist.state = request.form['state']
+    artist.phone = request.form['phone']
+    artist.image_link = request.form['image_link']
+    genres = request.form.getlist('genres')
+    artist.facebook_link = request.form['facebook_link']
+    artist.website = request.form['website_link']
+    artist.seeking_venue = True if request.form['seeking_venue'] == 'y' else False
+    artist.seeking_description = request.form['seeking_description']
+    print(genres)
+    for genre in genres:
+      genre_add = Genre(genre=genre)
+      artist.genre.append(genre_add)
+    # Send artist to table and commit
+    # db.session.add(artist)
+    db.session.commit()
   except Exception as e:
     error_in_insert = True
     db.session.rollback()
@@ -386,7 +383,7 @@ def edit_artist_submission(artist_id):
         db.session.close()
   if error_in_insert: 
     # if error occur, error message pop up
-    flash('An error occurred. Venue could not be updated.')
+    flash('An error occurred. Artist could not be updated.')
   if not error_in_insert: 
     # if success, success message pop up
     flash('Artist was successfully updated!')
@@ -425,8 +422,10 @@ def edit_venue_submission(venue_id):
 @app.route('/artists/create', methods=['GET'])
 def create_artist_form():
   form = ArtistForm()
+  '''
   for artist_name in form:
     print(artist_name.name)
+  '''
   return render_template('forms/new_artist.html', form=form)
 
 @app.route('/artists/create', methods=['POST'])
@@ -435,6 +434,7 @@ def create_artist_submission():
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
   form = ArtistForm()
+  # take data from the form
   name = request.form['name']
   city = request.form['city']
   state = request.form['state']
@@ -447,14 +447,14 @@ def create_artist_submission():
   seeking_description = request.form['seeking_description']
   error_in_insert = False
   try:
-    # creates the new artist with all fields but not genre yet
+    # creates the new artist with all fields except genre yet
     create_artist = Artist(name=name, city=city, state=state, phone=phone, 
                 image_link=image_link, facebook_link= facebook_link, website= website, seeking_venue=seeking_venue, seeking_description=seeking_description)
-
-    print(genre_venue)
+    
     for genre in genre_venue:
       genre_add = Genre(genre=genre)
       create_artist.genre.append(genre_add)
+    # Send artist to table and commit
     db.session.add(create_artist)
     db.session.commit()
   except Exception as e:
