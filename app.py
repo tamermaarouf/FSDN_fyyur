@@ -291,7 +291,7 @@ def show_artist(artist_id):
       "venue_id": res.venue_id,
       "venue_name": res.venues.name,
       "venue_image_link": res.venues.image_link,
-      "start_time": res.start_time
+      "start_time": str(res.start_time)
     })
   upcoming_shows_response = Shows.query.join(Venue).filter(Shows.artist_id==artist_id).filter(Shows.start_time>datetime.datetime.now()).all()
   for up_res in upcoming_shows_response:
@@ -299,7 +299,7 @@ def show_artist(artist_id):
       "venue_id": up_res.venue_id,
       "venue_name": up_res.venues.name,
       "venue_image_link": up_res.venues.image_link,
-      "start_time": up_res.start_time
+      "start_time": str(up_res.start_time)
     })
   data={
     "id": artistID.id,
@@ -523,20 +523,17 @@ def shows():
   # displays list of shows at /shows
   # TODO: replace with real venues data.
   data=[]
-  query_venues = Venue.query.order_by(Venue.state).all()
-  for qv in query_venues:
-    for EV in qv.show_venue:
-      artistID = Artist.query.filter(Artist.id==EV.artist_id)
-      for AID in artistID:
-        res={
-        "venue_id": qv.id,
-        "venue_name": qv.name,
-        "artist_id": AID.id,
-        "artist_name": AID.name,
-        "artist_image_link": AID.image_link,
-        "start_time": str(EV.start_time)
-        }
-      data.append(res)
+  # to get Venue and Artist many to many relationship (Show Class)
+  artists_venues = Shows.query.join(Venue).join(Artist).all()
+  for artist_venue in artists_venues:
+    data.append({
+        "venue_id": artist_venue.venue_id,
+        "venue_name": artist_venue.venues.name,
+        "artist_id": artist_venue.artist_id,
+        "artist_name": artist_venue.artists.name,
+        "artist_image_link": artist_venue.artists.image_link,
+        "start_time": str(artist_venue.start_time)
+    })
   return render_template('pages/shows.html', shows=data)
 
 @app.route('/shows/create')
@@ -550,9 +547,29 @@ def create_show_submission():
   # called to create new shows in the db, upon submitting new show listing form
   # TODO: insert form data as a new Show record in the db, instead
   form = ShowForm()
-
-  # on successful db insert, flash success
-  flash('Show was successfully listed!')
+  for key in form:
+    print(key.name)
+  # take the data from the form
+  artist_id = request.form['artist_id']
+  venue_id = request.form['venue_id']
+  start_time = request.form['start_time']
+  error_in_insert = False
+  try:
+    show = Shows(artist_id=artist_id, venue_id=venue_id, start_time=start_time)
+    db.session.add(show)
+    db.session.commit()
+  except Exception as e:
+    error_in_insert = True
+    print(f'Exception "{e}" in create_artist_submission()')
+    db.session.rollback()
+    print(sys.exc_info())
+  finally:
+    db.session.close()
+  if error_in_insert:
+    flash('An error occurred. Show could not be listed.')
+  else:
+    # on successful db insert, flash success
+    flash('Show was successfully listed!')
   # TODO: on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Show could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
