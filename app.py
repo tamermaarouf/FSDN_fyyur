@@ -91,7 +91,7 @@ def search_venues():
     }
   for record in query_Search:
     for event in record.show_venue:
-      if ((event.start_time) > (datetime.now())):
+      if ((event.start_time) > (datetime.datetime.now())):
         counter += 1
       resultSearch={
         "id": record.id,
@@ -172,7 +172,7 @@ def create_venue_submission():
   phone = request.form['phone']
   website = request.form['website_link']
   facebook_link = request.form['facebook_link']
-  seeking_talent = True if request.form['seeking_talent'] == 'y' else False
+  seeking_talent = True if request.form.get('seeking_talent') == 'y' else False
   seeking_description = request.form['seeking_description']
   image_link = request.form['image_link']
   # print(name, genre_venue, address, city, state, phone,website, facebook_link, seeking_talent)
@@ -366,7 +366,7 @@ def edit_artist_submission(artist_id):
     genres = request.form.getlist('genres')
     artist.facebook_link = request.form['facebook_link']
     artist.website = request.form['website_link']
-    artist.seeking_venue = True if request.form['seeking_venue'] == 'y' else False
+    artist.seeking_venue = True if request.form.get('seeking_venue') == 'y' else False
     artist.seeking_description = request.form['seeking_description']
     print(genres)
     for genre in genres:
@@ -434,7 +434,7 @@ def edit_venue_submission(venue_id):
     genres = request.form.getlist('genres')
     venue.facebook_link = request.form['facebook_link']
     venue.website = request.form['website_link']
-    venue.seeking_venue = True if request.form['seeking_talent'] == 'y' else False
+    venue.seeking_talent = True if request.form.get('seeking_talent') == 'y' else False
     venue.seeking_description = request.form['seeking_description']
     print(genres)
     for genre in genres:
@@ -485,7 +485,7 @@ def create_artist_submission():
   genre_venue = request.form.getlist('genres')
   facebook_link = request.form['facebook_link']
   website = request.form['website_link']
-  seeking_venue = True if request.form['seeking_venue'] == 'y' else False
+  seeking_venue = True if request.form.get('seeking_venue') == 'y' else False
   seeking_description = request.form['seeking_description']
   error_in_insert = False
   try:
