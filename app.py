@@ -372,7 +372,6 @@ def edit_artist_submission(artist_id):
       genre_add = Genre(genre=genre)
       artist.genre.append(genre_add)
     # Send artist to table and commit
-    # db.session.add(artist)
     db.session.commit()
   except Exception as e:
     error_in_insert = True
@@ -380,7 +379,7 @@ def edit_artist_submission(artist_id):
     print(e)
     print(sys.exc_info())
   finally:
-        db.session.close()
+    db.session.close()
   if error_in_insert: 
     # if error occur, error message pop up
     flash('An error occurred. Artist could not be updated.')
@@ -392,20 +391,26 @@ def edit_artist_submission(artist_id):
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
-  form = VenueForm()
+  venue = Venue.query.get(venue_id)
+  form = VenueForm(obj=venue)
+  genres = {}
+  for vg in venue.genres:
+    genres={
+      "genre": vg.genre
+      }
   venue={
-    "id": 1,
-    "name": "The Musical Hop",
-    "genres": ["Jazz", "Reggae", "Swing", "Classical", "Folk"],
-    "address": "1015 Folsom Street",
-    "city": "San Francisco",
-    "state": "CA",
-    "phone": "123-123-1234",
-    "website": "https://www.themusicalhop.com",
-    "facebook_link": "https://www.facebook.com/TheMusicalHop",
-    "seeking_talent": True,
-    "seeking_description": "We are on the lookout for a local artist to play every two weeks. Please call us.",
-    "image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60"
+    "id": venue.id,
+    "name": venue.name,
+    "genres": genres,
+    "address": venue.address,
+    "city": venue.city,
+    "state": venue.state,
+    "phone": venue.phone,
+    "website": venue.website,
+    "facebook_link": venue.facebook_link,
+    "seeking_talent": venue.seeking_talent,
+    "seeking_description": venue.seeking_description,
+    "image_link": venue.image_link
   }
   # TODO: populate form with values from venue with ID <venue_id>
   return render_template('forms/edit_venue.html', form=form, venue=venue)
@@ -414,6 +419,42 @@ def edit_venue(venue_id):
 def edit_venue_submission(venue_id):
   # TODO: take values from the form submitted, and update existing
   # venue record with ID <venue_id> using the new attributes
+  form = VenueForm()
+  genres = []
+  error_in_insert = False
+  venue = Venue.query.get(venue_id)
+  try:
+    venue.name = request.form['name']
+    venue.city = request.form['city']
+    venue.state = request.form['state']
+    venue.address = request.form['address']
+    venue.phone = request.form['phone']
+    venue.image_link = request.form['image_link']
+    genres = request.form.getlist('genres')
+    venue.facebook_link = request.form['facebook_link']
+    venue.website = request.form['website_link']
+    venue.seeking_venue = True if request.form['seeking_talent'] == 'y' else False
+    venue.seeking_description = request.form['seeking_description']
+    print(genres)
+    for genre in genres:
+      genre_add = Genre(genre=genre)
+      venue.genres.append(genre_add)
+    # Send artist to table and commit
+    db.session.commit()
+  except Exception as e:
+    error_in_insert = True
+    db.session.rollback()
+    print(e)
+    print(sys.exc_info())
+  finally:
+    db.session.close()
+  if error_in_insert: 
+    # if error occur, error message pop up
+    flash('An error occurred. Venue could not be updated.')
+  if not error_in_insert: 
+    # if success, success message pop up
+    flash('Venue was successfully updated!')
+
   return redirect(url_for('show_venue', venue_id=venue_id))
 
 #  Create Artist
