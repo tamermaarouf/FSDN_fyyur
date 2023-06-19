@@ -183,11 +183,12 @@ def create_venue_submission():
     create_venue =  Venue(name=name, address=address, city=city, state=state, phone=phone,image_link=image_link, facebook_link=facebook_link, 
                           website=website, seeking_talent=seeking_talent, seeking_description=seeking_description)
                           
-    # for genre in genre_venue:
-    #   print(genre)
-    #   new_genre=Genre(genre=genre)
-      
-    new_genres = Genre(genre=genre_venue)
+    
+    for genre in genre_venue:
+      genre_add = Genre(genre=genre)
+      create_venue.genres.append(genre_add)
+    
+    # Send artist to table and commit
     create_venue.genres.append(new_genres)
     # db.session.refresh(create_venue)
     db.session.add(create_venue)
